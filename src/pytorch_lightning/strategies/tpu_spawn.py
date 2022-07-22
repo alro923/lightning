@@ -76,6 +76,16 @@ class TPUSpawnStrategy(DDPSpawnStrategy):
         self.start_method = "fork"
 
     @property
+    def checkpoint_io(self) -> CheckpointIO:
+        if self._checkpoint_io is None:
+            self._checkpoint_io = XLACheckpointIO()
+        return self._checkpoint_io
+
+    @checkpoint_io.setter
+    def checkpoint_io(self, io: Optional[CheckpointIO]) -> None:
+        self._checkpoint_io = io
+
+    @property
     def root_device(self) -> torch.device:
         return xm.xla_device()
 
@@ -276,16 +286,3 @@ class TPUSpawnStrategy(DDPSpawnStrategy):
             cls,
             description=f"{cls.__class__.__name__}",
         )
-
-    @property
-    def checkpoint_io(self) -> CheckpointIO:
-        if self._checkpoint_io is None:
-            self._checkpoint_io = XLACheckpointIO()
-        elif isinstance(self._checkpoint_io, _WrappingCheckpointIO):
-            self._checkpoint_io.checkpoint_io = XLACheckpointIO()
-
-        return self._checkpoint_io
-
-    @checkpoint_io.setter
-    def checkpoint_io(self, io: Optional[CheckpointIO]) -> None:
-        self._checkpoint_io = io

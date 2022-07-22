@@ -48,6 +48,16 @@ class SingleTPUStrategy(SingleDeviceStrategy):
         self.debug = debug
 
     @property
+    def checkpoint_io(self) -> CheckpointIO:
+        if self._checkpoint_io is None:
+            self._checkpoint_io = XLACheckpointIO()
+        return self._checkpoint_io
+
+    @checkpoint_io.setter
+    def checkpoint_io(self, io: Optional[CheckpointIO]) -> None:
+        self._checkpoint_io = io
+
+    @property
     def is_distributed(self) -> bool:
         return False
 
@@ -72,16 +82,3 @@ class SingleTPUStrategy(SingleDeviceStrategy):
     def teardown(self) -> None:
         super().teardown()
         os.environ.pop("PT_XLA_DEBUG", None)
-
-    @property
-    def checkpoint_io(self) -> CheckpointIO:
-        if self._checkpoint_io is None:
-            self._checkpoint_io = XLACheckpointIO()
-        elif isinstance(self._checkpoint_io, _WrappingCheckpointIO):
-            self._checkpoint_io.checkpoint_io = XLACheckpointIO()
-
-        return self._checkpoint_io
-
-    @checkpoint_io.setter
-    def checkpoint_io(self, io: Optional[CheckpointIO]) -> None:
-        self._checkpoint_io = io

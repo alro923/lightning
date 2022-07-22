@@ -726,10 +726,10 @@ def test_passing_zero_and_empty_list_to_devices_flag(accelerator, devices):
         Trainer(accelerator=accelerator, devices=devices)
 
 
-@mock.patch("pytorch_lightning.strategies.hpu_parallel._HPU_AVAILABLE", return_value=False)
-@mock.patch("pytorch_lightning.accelerators.hpu._HPU_AVAILABLE", return_value=False)
-@mock.patch("pytorch_lightning.plugins.precision.hpu._HPU_AVAILABLE", return_value=False)
-def test_accelerator_specific_custom_plugin(*_):
+@mock.patch("pytorch_lightning.accelerators.hpu.HPUAccelerator.is_available", return_value=True)
+@mock.patch("pytorch_lightning.strategies.hpu_parallel._HPU_AVAILABLE", return_value=True)
+@mock.patch("pytorch_lightning.plugins.precision.hpu._HPU_AVAILABLE", return_value=True)
+def test_accelerator_specific_checkpoint_io(*_):
     ckpt_plugin = TorchCheckpointIO()
     trainer = Trainer(accelerator="hpu", strategy=HPUParallelStrategy(), plugins=[ckpt_plugin])
     assert trainer.strategy.checkpoint_io is ckpt_plugin

@@ -33,7 +33,7 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 
 if _HPU_AVAILABLE:
     import habana_frameworks.torch.core as htcore
-    import habana_frameworks.torch.core.hccl  # noqa: F401
+    import habana_frameworks.torch.distributed.hccl  # noqa: F401
 
 log = logging.getLogger(__name__)
 
@@ -74,6 +74,16 @@ class HPUParallelStrategy(DDPStrategy):
             process_group_backend=process_group_backend,
             **kwargs,
         )
+
+    @property
+    def checkpoint_io(self) -> CheckpointIO:
+        if self._checkpoint_io is None:
+            self._checkpoint_io = HPUCheckpointIO()
+        return self._checkpoint_io
+
+    @checkpoint_io.setter
+    def checkpoint_io(self, io: Optional[CheckpointIO]) -> None:
+        self._checkpoint_io = io
 
     def setup_environment(self) -> None:
 
@@ -152,16 +162,3 @@ class HPUParallelStrategy(DDPStrategy):
         # Was set to local rank
         os.environ.pop("ID", None)
         os.environ.pop("HCCL_DISTRIBUTED_BACKEND", None)
-
-    @property
-    def checkpoint_io(self) -> CheckpointIO:
-        if self._checkpoint_io is None:
-            self._checkpoint_io = HPUCheckpointIO()
-        elif isinstance(self._checkpoint_io, _WrappingCheckpointIO):
-            self._checkpoint_io.checkpoint_io = HPUCheckpointIO()
-
-        return self._checkpoint_io
-
-    @checkpoint_io.setter
-    def checkpoint_io(self, io: Optional[CheckpointIO]) -> None:
-        self._checkpoint_io = io

@@ -26,7 +26,6 @@ from pytorch_lightning.utilities.types import _DEVICE, STEP_OUTPUT
 
 if _HPU_AVAILABLE:
     import habana_frameworks.torch.core as htcore
-    import habana_frameworks.torch.core.hccl  # noqa: F401
 
 
 class SingleHPUStrategy(SingleDeviceStrategy):
@@ -51,6 +50,16 @@ class SingleHPUStrategy(SingleDeviceStrategy):
             checkpoint_io=checkpoint_io,
             precision_plugin=precision_plugin,
         )
+
+    @property
+    def checkpoint_io(self) -> CheckpointIO:
+        if self._checkpoint_io is None:
+            self._checkpoint_io = HPUCheckpointIO()
+        return self._checkpoint_io
+
+    @checkpoint_io.setter
+    def checkpoint_io(self, io: Optional[CheckpointIO]) -> None:
+        self._checkpoint_io = io
 
     @property
     def is_distributed(self) -> bool:
@@ -88,16 +97,3 @@ class SingleHPUStrategy(SingleDeviceStrategy):
             cls,
             description=f"{cls.__class__.__name__}",
         )
-
-    @property
-    def checkpoint_io(self) -> CheckpointIO:
-        if self._checkpoint_io is None:
-            self._checkpoint_io = HPUCheckpointIO()
-        elif isinstance(self._checkpoint_io, _WrappingCheckpointIO):
-            self._checkpoint_io.checkpoint_io = HPUCheckpointIO()
-
-        return self._checkpoint_io
-
-    @checkpoint_io.setter
-    def checkpoint_io(self, io: Optional[CheckpointIO]) -> None:
-        self._checkpoint_io = io
